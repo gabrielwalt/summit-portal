@@ -1,26 +1,48 @@
 /* Report Stats — Metric Cards */
+/* Matches original metric-card pattern with left color border */
 .report-stats {
   --rs-poor: #ef4444;
-  --rs-good: #10b981;
+  --rs-good: #22c55e;
   --rs-warning: #f59e0b;
 
-  padding: 16px 0;
+  padding: 0;
 }
 
 .report-stats .rs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
 }
 
 .report-stats .rs-card {
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgb(0 0 0 / 8%);
   border-radius: 12px;
-  padding: 20px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Left color border */
+.report-stats .rs-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.report-stats .rs-poor::before { background: var(--rs-poor); }
+.report-stats .rs-good::before { background: var(--rs-good); }
+.report-stats .rs-warning::before { background: var(--rs-warning); }
+
+.report-stats .rs-card:hover {
+  transform: translateY(-2px);
 }
 
 .report-stats .rs-header {
@@ -30,15 +52,18 @@
 }
 
 .report-stats .rs-label {
-  font-size: var(--body-font-size-s);
-  color: var(--color-gray-600);
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .report-stats .rs-indicator {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .report-stats .rs-indicator-poor { background: var(--rs-poor); }
@@ -46,18 +71,20 @@
 .report-stats .rs-indicator-warning { background: var(--rs-warning); }
 
 .report-stats .rs-value {
-  font-size: var(--heading-font-size-l);
+  font-size: 32px;
   font-weight: 700;
-  color: var(--color-gray-900);
+  color: #1a1a1a;
+  line-height: 1;
 }
 
 .report-stats .rs-poor .rs-value { color: var(--rs-poor); }
 .report-stats .rs-good .rs-value { color: var(--rs-good); }
+.report-stats .rs-warning .rs-value { color: var(--rs-warning); }
 
 .report-stats .rs-desc {
-  font-size: var(--body-font-size-xs);
-  color: var(--color-gray-500);
-  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 4px 0 0;
   line-height: 1.4;
 }
 
@@ -67,11 +94,16 @@
 }
 
 .report-stats.compact .rs-value {
-  font-size: var(--heading-font-size-s);
+  font-size: 22px;
 }
 
 @media (width < 600px) {
   .report-stats .rs-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .report-stats .rs-value {
+    font-size: 24px;
   }
 }

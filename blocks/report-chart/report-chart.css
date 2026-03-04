@@ -1,11 +1,12 @@
 /* Report Chart — Traffic Trend */
+/* Matches original chart-card pattern */
 .report-chart {
   padding: 0;
 }
 
 .report-chart .rch-container {
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgb(0 0 0 / 8%);
   border-radius: 12px;
   padding: 24px;
 }

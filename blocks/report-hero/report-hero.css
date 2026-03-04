@@ -1,102 +1,125 @@
 /* Report Hero — Cover & Transition Slides */
+/* Matches original introduction.css and transition-*.css */
 .report-hero {
-  --rh-red: #e60000;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   min-height: 480px;
-  padding: 64px 32px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  padding: 60px;
+  background: #e60000;
   color: #fff;
-  position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* Label badge */
+/* Label badge (cover) */
 .report-hero .rh-label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255 255 255 / 10%);
-  border: 1px solid rgba(255 255 255 / 20%);
-  border-radius: 20px;
-  padding: 6px 16px;
-  font-size: var(--body-font-size-s);
+  padding: 10px 24px;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   margin-bottom: 24px;
 }
 
-/* Company name */
+/* Company name (cover) */
 .report-hero .rh-company {
-  font-size: var(--heading-font-size-xxl);
-  font-weight: 700;
-  margin-bottom: 8px;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  margin-bottom: 0;
 }
 
 /* Title */
 .report-hero .rh-title {
-  font-size: var(--heading-font-size-xl);
+  font-size: 42px;
   font-weight: 300;
-  margin-bottom: 8px;
+  color: rgb(255 255 255 / 95%);
+  letter-spacing: -0.5px;
+  margin-bottom: 0;
 }
 
 .report-hero .rh-accent {
-  width: 60px;
+  width: 80px;
   height: 3px;
-  background: var(--rh-red);
-  margin: 12px auto 16px;
+  background: rgb(255 255 255 / 40%);
+  margin: 16px auto;
   border-radius: 2px;
 }
 
 /* Subtitle */
 .report-hero .rh-subtitle {
-  font-size: var(--body-font-size-m);
-  color: rgba(255 255 255 / 70%);
-  max-width: 600px;
-  margin-bottom: 32px;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 85%);
+  max-width: 550px;
+  margin: 0 auto 24px;
 }
 
 /* Element cards (cover) */
 .report-hero .rh-elements {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   justify-content: center;
   flex-wrap: wrap;
+  margin-top: 24px;
 }
 
 .report-hero .rh-element-card {
-  background: rgba(255 255 255 / 8%);
-  border: 1px solid rgba(255 255 255 / 15%);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 15%);
   border-radius: 12px;
-  padding: 16px 24px;
-  font-size: var(--body-font-size-s);
-  font-weight: 500;
-  min-width: 120px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  min-width: 140px;
 }
 
 /* Badge (transition) */
 .report-hero.transition .rh-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255 255 255 / 10%);
-  border: 1px solid rgba(255 255 255 / 20%);
-  border-radius: 20px;
-  padding: 6px 16px;
-  font-size: var(--body-font-size-s);
+  gap: 10px;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 24px;
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   margin-bottom: 24px;
 }
 
 .report-hero.transition .rh-title {
-  font-size: var(--heading-font-size-xxl);
-  font-weight: 700;
-  margin-bottom: 12px;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  color: #fff;
+  margin-bottom: 0;
+}
+
+.report-hero.transition .rh-subtitle {
+  font-size: 24px;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 90%);
+  max-width: 650px;
 }
 
 /* Metric previews (transition) */
@@ -112,35 +135,56 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  background: rgba(255 255 255 / 8%);
-  border: 1px solid rgba(255 255 255 / 15%);
-  border-radius: 12px;
-  padding: 16px 24px;
-  min-width: 140px;
+  gap: 8px;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 16px;
+  padding: 24px 32px;
+  min-width: 160px;
 }
 
 .report-hero .rh-metric-value {
-  font-size: var(--heading-font-size-l);
+  font-size: 42px;
   font-weight: 700;
+  letter-spacing: -1px;
 }
 
 .report-hero .rh-metric-label {
-  font-size: var(--body-font-size-xs);
-  color: rgba(255 255 255 / 70%);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 16px;
+  font-weight: 500;
+  color: rgb(255 255 255 / 85%);
+  letter-spacing: 0.3px;
 }
 
-@media (width < 600px) {
+@media (width < 768px) {
   .report-hero {
-    padding: 40px 16px;
+    padding: 40px 20px;
     min-height: 360px;
+  }
+
+  .report-hero .rh-company {
+    font-size: 48px;
+  }
+
+  .report-hero .rh-title {
+    font-size: 28px;
+  }
+
+  .report-hero.transition .rh-title {
+    font-size: 48px;
   }
 
   .report-hero .rh-elements,
   .report-hero .rh-metrics {
     flex-direction: column;
     align-items: center;
+  }
+
+  .report-hero .rh-metric {
+    flex-direction: row;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    padding: 20px 24px;
   }
 }
