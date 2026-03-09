@@ -1,16 +1,6 @@
 /* File List — Sortable File Table */
 .file-list {
-  /* Token fallbacks (this block may load on pages without report-hero) */
-  --rpt-surface: light-dark(#fff, #1c1c1c);
-  --rpt-surface-alt: light-dark(#f9fafb, #161616);
-  --rpt-surface-hover: light-dark(rgb(0 0 0 / 2%), rgb(255 255 255 / 5%));
-  --rpt-border: light-dark(rgb(0 0 0 / 8%), rgb(255 255 255 / 10%));
-  --rpt-border-subtle: light-dark(rgb(0 0 0 / 6%), rgb(255 255 255 / 7%));
-  --rpt-text: light-dark(#1a1a1a, #e8e8e8);
-  --rpt-text-secondary: light-dark(#4b5563, #b0b8c4);
-  --rpt-text-muted: light-dark(#6b7280, #8b95a5);
-  --rpt-text-faint: light-dark(#9ca3af, #6b7580);
-  --rpt-red-dark: light-dark(#e60000, #ff3333);
+  --fl-accent: light-dark(#e60000, #ff3333);
 
   max-width: 30%;
   padding: 0;
@@ -22,23 +12,23 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  background: var(--rpt-surface);
-  border: 1px solid var(--rpt-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   overflow: hidden;
 }
 
 /* Header */
 .file-list th {
-  background: var(--rpt-surface-alt);
+  background: var(--color-surface-alt);
   font-size: 12px;
   font-weight: 600;
-  color: var(--rpt-text-muted);
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   text-align: left;
   padding: 12px 16px;
-  border-bottom: 2px solid var(--rpt-border);
+  border-bottom: 2px solid var(--color-border);
   white-space: nowrap;
 }
 
@@ -52,7 +42,7 @@
 }
 
 .file-list th.fl-sortable:hover {
-  color: var(--rpt-text);
+  color: var(--color-text);
 }
 
 /* Default sort arrow (neutral) */
@@ -74,7 +64,7 @@
 
 /* Active sorted — ascending */
 .file-list th.fl-sorted[data-dir="asc"]::after {
-  border-bottom: 5px solid var(--rpt-red-dark);
+  border-bottom: 5px solid var(--fl-accent);
   border-top: none;
   opacity: 1;
 }
@@ -82,15 +72,15 @@
 /* Active sorted — descending */
 .file-list th.fl-sorted[data-dir="desc"]::after {
   border-bottom: none;
-  border-top: 5px solid var(--rpt-red-dark);
+  border-top: 5px solid var(--fl-accent);
   opacity: 1;
 }
 
 /* Cells */
 .file-list td {
   padding: 12px 16px;
-  color: var(--rpt-text-secondary);
-  border-bottom: 1px solid var(--rpt-border-subtle);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-subtle);
   line-height: 1.4;
 }
 
@@ -103,7 +93,7 @@
 }
 
 .file-list tr.fl-row:hover td {
-  background: var(--rpt-surface-hover);
+  background: var(--color-surface-hover);
 }
 
 /* File cell — badge + link */
@@ -112,11 +102,11 @@
   align-items: center;
   gap: 10px;
   font-weight: 600;
-  color: var(--rpt-text);
+  color: var(--color-text);
 }
 
 .file-list .fl-cell-file a {
-  color: var(--rpt-red-dark);
+  color: var(--fl-accent);
   text-decoration: none;
 }
 
@@ -144,7 +134,7 @@
 /* Date cell */
 .file-list .fl-cell-date {
   white-space: nowrap;
-  color: var(--rpt-text-muted);
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
