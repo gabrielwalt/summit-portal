@@ -22,6 +22,21 @@
     :last-child {
       margin-bottom: 0;
     }
+
+    h3 {
+      color: light-dark(#eb1000, var(--color-red-400));
+      text-align: center;
+    }
+
+    p {
+      text-align: center;
+      padding: 0 var(--spacing-m);
+    }
+
+    a {
+      text-align: center;
+      display: block;
+    }
   }
 
   &.gap-xs {

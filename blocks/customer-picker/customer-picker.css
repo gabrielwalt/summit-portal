@@ -104,12 +104,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding: 14px 18px;
   border-radius: 10px;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text);
+  font-family: var(--font-family);
   text-decoration: none;
+  text-align: left;
   transition: all 0.15s ease;
   cursor: pointer;
 }
@@ -119,6 +122,11 @@
   background: var(--color-surface-hover);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+}
+
+.cp-card--active {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 2px light-dark(var(--color-purple-200), var(--color-purple-700));
 }
 
 .cp-card-name {
@@ -137,6 +145,121 @@
 .cp-card:hover .cp-card-arrow {
   color: light-dark(var(--color-blue-500), var(--color-blue-400));
   transform: translateX(2px);
+}
+
+/* Dialog */
+.cp-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-l);
+}
+
+.cp-dialog-backdrop[hidden] {
+  display: none;
+}
+
+.cp-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  border-radius: 12px;
+  background: var(--color-surface-raised);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
+}
+
+.cp-dialog-close {
+  position: absolute;
+  top: var(--spacing-m);
+  right: var(--spacing-m);
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cp-dialog-close:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.cp-dialog-title {
+  font-size: var(--heading-font-size-s);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-l);
+  padding-right: 40px;
+  color: var(--color-text);
+}
+
+.cp-dialog-section {
+  margin-bottom: var(--spacing-l);
+}
+
+.cp-dialog-section h4 {
+  font-size: var(--body-font-size-s);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-s);
+}
+
+.cp-dialog-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-s);
+}
+
+.cp-dialog-list li {
+  padding: 4px 10px;
+  background: light-dark(var(--color-purple-100), var(--color-purple-900));
+  border: 1px solid light-dark(var(--color-purple-200), var(--color-purple-700));
+  border-radius: 20px;
+  font-size: var(--body-font-size-s);
+  color: var(--color-text);
+}
+
+.cp-dialog-list a {
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+.cp-dialog-list a:hover {
+  text-decoration: underline;
+}
+
+.cp-dialog-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--color-brand);
+  color: var(--color-light);
+  border-radius: 8px;
+  font-size: var(--body-font-size-s);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.cp-dialog-cta:hover {
+  opacity: 0.85;
 }
 
 /* Responsive */

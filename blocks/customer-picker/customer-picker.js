@@ -45,10 +45,68 @@ function buildLetterNav(groups) {
   return nav;
 }
 
-function buildCard(company) {
-  const card = document.createElement('a');
+function buildDialog() {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'cp-dialog-backdrop';
+  backdrop.hidden = true;
+
+  const dialog = document.createElement('div');
+  dialog.className = 'cp-dialog';
+
+  const close = document.createElement('button');
+  close.className = 'cp-dialog-close';
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Close details');
+  close.innerHTML = '&times;';
+
+  const content = document.createElement('div');
+  content.className = 'cp-dialog-content';
+
+  dialog.append(close, content);
+  backdrop.append(dialog);
+  document.body.append(backdrop);
+
+  return { backdrop, close, content };
+}
+
+function renderDialog(content, company, websiteMap, domainMap) {
+  const websites = websiteMap.get(company.Company) || [];
+  const domains = domainMap.get(company.Company) || [];
+
+  let html = `<h3 class="cp-dialog-title">${company.Company}</h3>`;
+
+  if (websites.length) {
+    html += `<div class="cp-dialog-section">
+      <h4>Websites</h4>
+      <ul class="cp-dialog-list">
+        ${websites.map((w) => {
+    const href = /^https?:\/\//i.test(w) ? w : `https://${w}`;
+    return `<li><a href="${href}" target="_blank" rel="noopener">${w}</a></li>`;
+  }).join('')}
+      </ul>
+    </div>`;
+  }
+
+  if (domains.length) {
+    html += `<div class="cp-dialog-section">
+      <h4>Email Domains</h4>
+      <ul class="cp-dialog-list">
+        ${domains.map((d) => `<li>${d}</li>`).join('')}
+      </ul>
+    </div>`;
+  }
+
+  if (company.Folder) {
+    html += `<a class="cp-dialog-cta" href="${company.Folder}">Go to dashboard &rarr;</a>`;
+  }
+
+  content.innerHTML = html;
+}
+
+function buildCard(company, onOpen) {
+  const card = document.createElement('button');
   card.className = 'cp-card';
-  card.href = company.Folder;
+  card.type = 'button';
 
   const name = document.createElement('span');
   name.className = 'cp-card-name';
@@ -60,10 +118,11 @@ function buildCard(company) {
   arrow.textContent = '→';
   card.append(arrow);
 
+  card.addEventListener('click', () => onOpen(card, company));
   return card;
 }
 
-function buildGrid(companies) {
+function buildGrid(companies, websiteMap, domainMap) {
   const grouped = new Map();
   for (const c of companies) {
     const letter = getLetterGroup(c.Company);
@@ -71,11 +130,35 @@ function buildGrid(companies) {
     grouped.get(letter).push(c);
   }
 
-  // Sort groups in LETTERS order
   const sortedGroups = new Map();
   for (const letter of LETTERS) {
     if (grouped.has(letter)) sortedGroups.set(letter, grouped.get(letter));
   }
+
+  const { backdrop, close, content } = buildDialog();
+  let activeCard = null;
+
+  function closeDialog() {
+    backdrop.hidden = true;
+    if (activeCard) {
+      activeCard.classList.remove('cp-card--active');
+      activeCard.focus();
+      activeCard = null;
+    }
+  }
+
+  function openDialog(card, company) {
+    if (activeCard) activeCard.classList.remove('cp-card--active');
+    activeCard = card;
+    card.classList.add('cp-card--active');
+    renderDialog(content, company, websiteMap, domainMap);
+    backdrop.hidden = false;
+    close.focus();
+  }
+
+  close.addEventListener('click', closeDialog);
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeDialog(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !backdrop.hidden) closeDialog(); });
 
   const grid = document.createElement('div');
   grid.className = 'cp-grid';
@@ -93,7 +176,7 @@ function buildGrid(companies) {
     const cards = document.createElement('div');
     cards.className = 'cp-cards';
     for (const company of items) {
-      cards.append(buildCard(company));
+      cards.append(buildCard(company, openDialog));
     }
     section.append(cards);
     grid.append(section);
@@ -121,27 +204,67 @@ function applyFilter(container, query) {
   }
 }
 
+function buildLookupMaps(companyData, cugData) {
+  const websiteMap = new Map();
+  (companyData?.data || []).forEach((row) => {
+    const company = row.Company;
+    const raw = row.Domains;
+    if (company && raw) {
+      const sites = raw.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+      if (sites.length) websiteMap.set(company, sites);
+    }
+  });
+
+  const cugByPath = new Map();
+  (cugData?.data || []).forEach((row) => {
+    const path = row.url?.replace(/\*+$/, '').replace(/\/$/, '');
+    const groups = row['cug-groups'];
+    if (path && groups) cugByPath.set(path, groups);
+  });
+
+  const domainMap = new Map();
+  (companyData?.data || []).forEach((row) => {
+    const company = row.Company;
+    const folder = row.Folder?.replace(/\/$/, '');
+    if (!company || !folder) return;
+    const raw = cugByPath.get(folder);
+    if (!raw) return;
+    const domains = raw.split(/[\n,]+/).map((d) => d.trim()).filter(Boolean);
+    if (domains.length) domainMap.set(company, domains);
+  });
+
+  return { websiteMap, domainMap };
+}
+
 export default async function init(el) {
-  // Find JSON source link
   const link = el.querySelector('a[href$=".json"]');
   if (!link) return;
 
-  const resp = await fetch(link.href);
-  if (!resp.ok) return;
-  const json = await resp.json();
-  const companies = json.data || [];
+  const origin = new URL(link.href).origin;
+  const companyUrl = `${origin}/data/company-list.json`;
+  const cugUrl = `${origin}/closed-user-groups.json`;
 
-  // Clear block content
+  const [mappingResp, companyResp, cugResp] = await Promise.all([
+    fetch(link.href),
+    fetch(companyUrl),
+    fetch(cugUrl),
+  ]);
+  if (!mappingResp.ok) return;
+
+  const companies = (await mappingResp.json()).data || [];
+  const companyData = companyResp.ok ? await companyResp.json() : null;
+  const cugData = cugResp.ok ? await cugResp.json() : null;
+
+  const { websiteMap, domainMap } = buildLookupMaps(companyData, cugData);
+
   el.textContent = '';
 
-  // Build UI
   const { wrapper: searchWrapper, input: searchInput } = buildSearch();
-  const { grid, groups } = buildGrid(companies);
+  const { grid, groups } = buildGrid(companies, websiteMap, domainMap);
   const letterNav = buildLetterNav(groups);
 
   el.append(searchWrapper, letterNav, grid);
 
-  // Search handler
   let debounce;
   searchInput.addEventListener('input', () => {
     clearTimeout(debounce);
