@@ -1,5 +1,5 @@
 const FILE_ICONS = {
-  pdf: { label: 'PDF', color: '#e60000' },
+  pdf: { label: 'PDF', color: 'var(--color-adobe-red)' },
   docx: { label: 'DOCX', color: '#2176ff' },
   doc: { label: 'DOC', color: '#2176ff' },
   xlsx: { label: 'XLSX', color: '#22c55e' },
@@ -160,6 +160,18 @@ export default async function init(el) {
   const rows = [...el.querySelectorAll(':scope > div')];
   if (!rows.length) return;
 
+  // Extract header title from <strong> in the block content
+  const strongEl = el.querySelector('strong');
+  const headerTitle = strongEl?.textContent.trim() || 'Files';
+
+  // Build header (same style as todo/for-you)
+  const header = document.createElement('div');
+  header.className = 'fl-header';
+  const titleEl = document.createElement('h3');
+  titleEl.className = 'fl-title';
+  titleEl.textContent = headerTitle;
+  header.append(titleEl);
+
   // Check if block contains a link to a JSON sheet
   const link = el.querySelector('a[href$=".json"]');
   let files;
@@ -209,7 +221,10 @@ export default async function init(el) {
       });
     });
 
-    el.append(table);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'fl-table-wrapper';
+    wrapper.append(table);
+    el.append(header, wrapper);
   }
 
   render();
