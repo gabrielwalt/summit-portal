@@ -127,6 +127,7 @@ header {
       display: flex;
       justify-content: space-between;
       gap: 8px;
+      padding-right: 120px;
 
       p,
       a {
@@ -185,6 +186,7 @@ header {
       height: var(--header-height);
       padding-inline: 8px;
       z-index: 1;
+      background-color: inherit;
     }
 
     .user-sign-in {
@@ -346,6 +348,7 @@ header {
       .default-content {
         max-width: initial;
         margin: 0;
+        padding-right: 0;
       }
 
       .action-wrapper.more {
