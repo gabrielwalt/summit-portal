@@ -193,7 +193,10 @@ async function decorateUserInfo(section) {
     const signOut = document.createElement('a');
     signOut.href = '/auth/logout';
     signOut.textContent = 'Sign out';
-    menu.append(signOut);
+    const myPortal = document.createElement('a');
+    myPortal.href = '/auth/portal';
+    myPortal.textContent = 'My Portal';
+    menu.append(signOut, myPortal);
 
     btn.addEventListener('click', () => toggleMenu(wrapper));
     wrapper.append(btn, menu);
