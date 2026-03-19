@@ -202,7 +202,7 @@ header {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 200px;
+      max-width: 100px;
       padding: 0;
       color: light-dark(var(--color-gray-600), var(--color-gray-400));
     }
@@ -392,6 +392,10 @@ header {
         top: auto;
         right: auto;
         height: 100%;
+      }
+
+      .user-email {
+        max-width: 200px;
       }
 
       .action-wrapper {
