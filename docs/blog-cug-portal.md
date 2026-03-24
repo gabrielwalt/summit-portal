@@ -77,166 +77,29 @@ The tool exposes two buttons: **Apply Page Access** (pushes CUG headers) and **R
 
 The "Apply" flow chains five functions:
 
-#### 1. Fetch the spreadsheet
+#### 1. [`fetchCugSheet`](https://github.com/aemsites/summit-portal/blob/main/tools/cug/cug.js) — Fetch the spreadsheet
 
-```javascript
-async function fetchCugSheet(org, site, token) {
-  const url = `${DA_SOURCE_BASE}/${org}/${site}/${CUG_SHEET_PATH}`;
-  const resp = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+Fetches `closed-user-groups.json` from the DA source API and returns the `data` array of rows.
 
-  if (!resp.ok) {
-    throw new Error(`Failed to fetch CUG sheet: ${resp.status} ${resp.statusText}`);
-  }
-
-  const json = await resp.json();
-  return Array.isArray(json.data) ? json.data : [];
-}
-```
-
-This fetches the `closed-user-groups.json` spreadsheet from the DA source API and returns the `data` array of rows.
-
-#### 2. Transform rows into headers config
-
-```javascript
-function transformToHeadersConfig(rows) {
-  const config = {};
-
-  for (const row of rows) {
-    const path = (row.url || '').trim();
-    if (!path || !path.startsWith('/')) continue;
-    if (config[path]) continue;
-
-    const headers = [];
-    const required = (row['cug-required'] || '').trim().toLowerCase();
-    if (required === 'true' || required === 'false') {
-      headers.push({ key: HEADER_CUG_REQUIRED, value: required });
-    }
-
-    const groups = (row['cug-groups'] || '').trim();
-    if (groups) {
-      headers.push({ key: HEADER_CUG_GROUPS, value: groups });
-    }
-
-    if (headers.length > 0) {
-      config[path] = headers;
-    }
-  }
-
-  return config;
-}
-```
+#### 2. [`transformToHeadersConfig`](https://github.com/aemsites/summit-portal/blob/main/tools/cug/cug.js) — Transform rows into headers config
 
 Each spreadsheet row becomes a path entry with one or two headers: `x-aem-cug-required` and optionally `x-aem-cug-groups`. Duplicate paths are skipped (first row wins).
 
-#### 3. Fetch existing non-CUG headers
+#### 3. [`fetchExistingNonCugHeaders`](https://github.com/aemsites/summit-portal/blob/main/tools/cug/cug.js) — Fetch existing non-CUG headers
 
-```javascript
-async function fetchExistingNonCugHeaders(org, site, token) {
-  const url = `${ADMIN_API_BASE}/config/${org}/aggregated/${site}.json`;
-  const resp = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+Reads the current site config from the Admin API and strips out any existing CUG headers, keeping everything else (cache headers, security headers, etc.) intact.
 
-  if (!resp.ok) {
-    if (resp.status === 404) return {};
-    const body = await resp.text().catch(() => '');
-    throw new Error(`Failed to read site config: ${resp.status} ${resp.statusText} ${body}`);
-  }
-
-  const config = await resp.json();
-  const existing = config.headers || {};
-  const filtered = {};
-
-  for (const [path, headerList] of Object.entries(existing)) {
-    const nonCug = Array.isArray(headerList)
-      ? headerList.filter((h) => !isCugHeader(h.key))
-      : [];
-    if (nonCug.length > 0) {
-      filtered[path] = nonCug;
-    }
-  }
-
-  return filtered;
-}
-```
-
-This reads the current site config from the Admin API and strips out any existing CUG headers, keeping everything else (cache headers, security headers, etc.) intact.
-
-#### 4. Merge headers
-
-```javascript
-function mergeHeaders(nonCugHeaders, cugHeaders) {
-  const merged = { ...nonCugHeaders };
-
-  for (const [path, cugList] of Object.entries(cugHeaders)) {
-    const existing = merged[path] || [];
-    merged[path] = [...existing, ...cugList];
-  }
-
-  return merged;
-}
-```
+#### 4. [`mergeHeaders`](https://github.com/aemsites/summit-portal/blob/main/tools/cug/cug.js) — Merge headers
 
 Non-CUG and CUG headers are merged per path. This ensures the tool never overwrites unrelated headers.
 
-#### 5. POST to the Config Service
-
-```javascript
-async function postHeaders(org, site, headersConfig, token) {
-  const url = `${ADMIN_API_BASE}/config/${org}/sites/${site}/headers.json`;
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(headersConfig),
-  });
-
-  if (!resp.ok) {
-    const body = await resp.text().catch(() => '');
-    throw new Error(`Config Service POST failed: ${resp.status} ${resp.statusText} — ${body}`);
-  }
-}
-```
+#### 5. [`postHeaders`](https://github.com/aemsites/summit-portal/blob/main/tools/cug/cug.js) — POST to the Config Service
 
 The merged header config is POSTed to `admin.hlx.page/config/{org}/sites/{site}/headers.json`. From this point on, Edge Delivery will attach these headers to every matching response.
 
 ### Wiring it up
 
-The init function ties the pipeline together with the DA SDK, which provides the `org`, `site`, and `token` context:
-
-```javascript
-(async function init() {
-  const { context, token } = await DA_SDK;
-  const { org, site } = context;
-
-  renderUI(
-    document.body,
-    async () => {
-      const rows = await fetchCugSheet(org, site, token);
-      const cugHeaders = transformToHeadersConfig(rows);
-      const nonCugHeaders = await fetchExistingNonCugHeaders(org, site, token);
-      const merged = mergeHeaders(nonCugHeaders, cugHeaders);
-
-      await postHeaders(org, site, merged, token);
-
-      return {
-        cugPaths: Object.keys(cugHeaders).length,
-        totalPaths: Object.keys(merged).length,
-      };
-    },
-    async () => {
-      const nonCugHeaders = await fetchExistingNonCugHeaders(org, site, token);
-      await postHeaders(org, site, nonCugHeaders, token);
-    },
-  );
-}());
-```
-
-The "Remove" callback is the same flow but skips the CUG headers entirely, effectively deleting them from the Config Service.
+The [`init` function](https://github.com/aemsites/summit-portal/blob/main/tools/cug/cug.js) ties the pipeline together with the DA SDK, which provides the `org`, `site`, and `token` context. It calls `fetchCugSheet` → `transformToHeadersConfig` → `fetchExistingNonCugHeaders` → `mergeHeaders` → `postHeaders` in sequence. The "Remove" callback is the same flow but skips the CUG headers entirely, effectively deleting them from the Config Service.
 
 ---
 
@@ -259,93 +122,11 @@ The entry point in [`src/index.js`](https://github.com/aemsites/summit-portal/bl
 | RUM / media | `proxyToOrigin` | Passed through without auth |
 | Everything else | `proxyToOrigin` → `checkCugAccess` | Proxied, then CUG-checked |
 
-The proxy function rewrites the hostname to the origin, sets forwarding headers, and enables Cloudflare's edge cache:
-
-```javascript
-async function proxyToOrigin(request, env, url) {
-  const extension = getExtension(url.pathname);
-  const savedSearch = url.search;
-  const { searchParams } = url;
-
-  if (isMediaRequest(url)) {
-    for (const [key] of searchParams.entries()) {
-      if (!['format', 'height', 'optimize', 'width'].includes(key)) {
-        searchParams.delete(key);
-      }
-    }
-  } else if (extension === 'json') {
-    for (const [key] of searchParams.entries()) {
-      if (!['limit', 'offset', 'sheet'].includes(key)) {
-        searchParams.delete(key);
-      }
-    }
-  } else {
-    url.search = '';
-  }
-  searchParams.sort();
-
-  url.hostname = env.ORIGIN_HOSTNAME;
-  const req = new Request(url, request);
-  req.headers.set('x-forwarded-host', req.headers.get('host'));
-  req.headers.set('x-byo-cdn-type', 'cloudflare');
-  if (env.PUSH_INVALIDATION !== 'disabled') {
-    req.headers.set('x-push-invalidation', 'enabled');
-  }
-  if (env.ORIGIN_AUTHENTICATION) {
-    req.headers.set('authorization', `token ${env.ORIGIN_AUTHENTICATION}`);
-  }
-
-  let resp = await fetch(req, {
-    method: req.method,
-    cf: { cacheEverything: true },
-  });
-  resp = new Response(resp.body, resp);
-
-  resp.headers.delete('age');
-  resp.headers.delete('x-robots-tag');
-  return resp;
-}
-```
-
-Query parameters are sanitized per resource type to prevent cache pollution — media requests only keep dimension/format params, JSON requests only keep pagination params, and HTML requests strip all query params.
+The [`proxyToOrigin`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/index.js) function rewrites the hostname to the origin, sets forwarding headers, and enables Cloudflare's edge cache. Query parameters are sanitized per resource type to prevent cache pollution — media requests only keep dimension/format params, JSON requests only keep pagination params, and HTML requests strip all query params.
 
 ### CUG Enforcement (cug.js)
 
-After the origin responds, [`src/cug.js`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/cug.js) checks the CUG headers:
-
-```javascript
-export async function checkCugAccess(originResponse, session, request, env) {
-  const cugRequired = originResponse.headers.get('x-aem-cug-required');
-  const cugGroups = originResponse.headers.get('x-aem-cug-groups');
-
-  // No CUG protection on this path — serve publicly
-  if (cugRequired !== 'true') {
-    return stripCugHeaders(originResponse);
-  }
-
-  // CUG required but no session — redirect to login
-  if (!session) {
-    return redirectToLogin(request.url, env);
-  }
-
-  // If specific domains are required, check the user's email domain
-  if (cugGroups) {
-    const allowedGroups = cugGroups.split(',').map((g) => g.trim().toLowerCase());
-    const userGroups = session.groups || [];
-    const hasAccess = allowedGroups.some((g) => userGroups.includes(g));
-
-    if (!hasAccess) {
-      return Response.redirect(new URL('/403', request.url).href, 302);
-    }
-  }
-
-  const resp = stripCugHeaders(originResponse);
-  resp.headers.set('Cache-Control', 'private, no-store');
-  return resp;
-}
-```
-
-The logic is straightforward:
+After the origin responds, [`checkCugAccess`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/cug.js) checks the CUG headers. The logic is straightforward:
 
 1. **No `x-aem-cug-required: true`** → strip internal headers and serve publicly.
 2. **CUG required, no session** → redirect to IMS login (the original URL is preserved so the user lands back on the same page after authenticating).
@@ -364,139 +145,25 @@ Source: [`src/oauth.js`](https://github.com/aemsites/summit-portal/blob/main/wor
 
 ### Starting the login flow
 
-When a visitor hits a protected page without a session, `redirectToLogin` generates a PKCE verifier and challenge, stores the verifier in Cloudflare KV with a 5-minute TTL, and redirects to the IMS authorize endpoint:
-
-```javascript
-export async function redirectToLogin(originalUrl, env) {
-  const { verifier, challenge } = await generatePkce();
-  const state = generateState();
-
-  await env.SESSIONS.put(`pkce:${state}`, JSON.stringify({ verifier, originalUrl }), {
-    expirationTtl: 300,
-  });
-
-  const params = new URLSearchParams({
-    client_id: env.OAUTH_CLIENT_ID,
-    scope: env.OAUTH_SCOPE,
-    response_type: 'code',
-    redirect_uri: env.OAUTH_REDIRECT_URI,
-    code_challenge: challenge,
-    code_challenge_method: 'S256',
-    state,
-  });
-
-  return Response.redirect(`${env.OAUTH_AUTHORIZE_URL}?${params}`, 302);
-}
-```
-
-The `state` parameter serves double duty: it prevents CSRF attacks and acts as the key for looking up the stored verifier + original URL after the callback.
+When a visitor hits a protected page without a session, [`redirectToLogin`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/oauth.js) generates a PKCE verifier and challenge, stores the verifier in Cloudflare KV with a 5-minute TTL, and redirects to the IMS authorize endpoint. The `state` parameter serves double duty: it prevents CSRF attacks and acts as the key for looking up the stored verifier + original URL after the callback.
 
 ### Handling the callback
 
-After the user authenticates with Adobe IMS, the browser is redirected back to `/auth/callback` with the authorization code. The Worker retrieves the stored PKCE verifier from KV and exchanges the code for tokens:
-
-```javascript
-export async function handleCallback(request, env) {
-  const url = new URL(request.url);
-  const code = url.searchParams.get('code');
-  const state = url.searchParams.get('state');
-  const error = url.searchParams.get('error');
-
-  if (error) {
-    return new Response(`OAuth error: ${error} - ${url.searchParams.get('error_description') || ''}`, {
-      status: 400,
-    });
-  }
-
-  if (!code || !state) {
-    return Response.redirect(new URL('/', url).href, 302);
-  }
-
-  const stored = await env.SESSIONS.get(`pkce:${state}`, 'json');
-  if (!stored) {
-    return new Response('Invalid or expired state', { status: 400 });
-  }
-  await env.SESSIONS.delete(`pkce:${state}`);
-
-  const tokenResponse = await fetch(env.OAUTH_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      client_id: env.OAUTH_CLIENT_ID,
-      client_secret: env.OAUTH_CLIENT_SECRET,
-      code,
-      code_verifier: stored.verifier,
-      redirect_uri: env.OAUTH_REDIRECT_URI,
-    }),
-  });
-
-  if (!tokenResponse.ok) {
-    return new Response('Authentication failed. Please try again.', { status: 502 });
-  }
-
-  const tokens = await tokenResponse.json();
-  const claims = parseJwt(tokens.id_token || tokens.access_token);
-  const email = (claims.email || claims.sub).toLowerCase();
-  if (!email) {
-    return new Response('Could not determine user email from token', { status: 502 });
-  }
-  const domain = email.split('@')[1] || '';
-
-  return {
-    userInfo: { email, name: claims.name || email, groups: [domain] },
-    originalUrl: stored.originalUrl,
-  };
-}
-```
-
-The user's email domain becomes their group for CUG matching: `user@adobe.com` → group `adobe.com`. This is a simple but effective strategy for organizations where email domain maps to organizational membership.
+After the user authenticates with Adobe IMS, the browser is redirected back to `/auth/callback` with the authorization code. [`handleCallback`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/oauth.js) retrieves the stored PKCE verifier from KV, exchanges the code for tokens, and extracts the user's email from the ID token. The user's email domain becomes their group for CUG matching: `user@adobe.com` → group `adobe.com`. This is a simple but effective strategy for organizations where email domain maps to organizational membership.
 
 ### Session management
 
 Source: [`src/session.js`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/session.js)
 
-Sessions are stateless JWTs signed with HMAC-SHA256. No server-side session store is needed for verification — the Worker signs the JWT on login and verifies it on every request using the shared `JWT_SECRET`.
+Sessions are stateless JWTs signed with HMAC-SHA256 (see [`session.js`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/session.js)). No server-side session store is needed for verification — the Worker signs the JWT on login and verifies it on every request using the shared `JWT_SECRET`.
 
-```javascript
-export async function createSession(env, userInfo) {
-  const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    email: userInfo.email,
-    name: userInfo.name,
-    groups: userInfo.groups,
-    iat: now,
-    exp: now + SESSION_TTL,
-  };
-  return signJwt(payload, env.JWT_SECRET);
-}
-```
-
-The JWT payload contains `email`, `name`, `groups`, and a 1-hour expiration. It's stored in the `auth_token` cookie with security attributes:
-
-```javascript
-export function sessionCookie(token) {
-  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_TTL}`;
-}
-```
+[`createSession`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/session.js) builds a JWT payload containing `email`, `name`, `groups`, and a 1-hour expiration. The token is stored in the `auth_token` cookie with security attributes:
 
 - **HttpOnly** prevents JavaScript access (XSS protection).
 - **Secure** ensures the cookie is only sent over HTTPS.
 - **SameSite=Lax** provides CSRF protection while allowing top-level navigations.
 
-Verification reads the cookie, splits the JWT, and checks the HMAC signature and expiration:
-
-```javascript
-export async function getSession(request, env) {
-  const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^\\s;]+)`));
-  if (!match) return null;
-
-  return verifyJwt(match[1], env.JWT_SECRET);
-}
-```
-
-The Cloudflare KV namespace (`SESSIONS`) is only used for temporary PKCE state during the OAuth flow — not for session storage.
+[`getSession`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/session.js) reads the cookie, splits the JWT, and checks the HMAC signature and expiration. The Cloudflare KV namespace (`SESSIONS`) is only used for temporary PKCE state during the OAuth flow — not for session storage.
 
 ---
 
@@ -506,43 +173,7 @@ The Cloudflare KV namespace (`SESSIONS`) is only used for temporary PKCE state d
 
 Source: [`src/portal.js`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/portal.js)
 
-The `/auth/portal` route provides a single entry point for all authenticated users. It fetches a `closed-user-groups-mapping.json` spreadsheet from the origin and redirects the user to the page mapped to their group:
-
-```javascript
-export async function handlePortalRedirect(session, request, env) {
-  const origin = new URL(request.url);
-  origin.hostname = env.ORIGIN_HOSTNAME;
-  origin.pathname = MAPPING_PATH;
-  origin.search = '';
-
-  let mapping;
-  try {
-    const headers = {};
-    if (env.ORIGIN_AUTHENTICATION) {
-      headers.authorization = `token ${env.ORIGIN_AUTHENTICATION}`;
-    }
-    const resp = await fetch(origin, { headers });
-    if (!resp.ok) {
-      return redirect(request, FALLBACK_PATH);
-    }
-    mapping = await resp.json();
-  } catch {
-    return redirect(request, FALLBACK_PATH);
-  }
-
-  const entries = Array.isArray(mapping.data) ? mapping.data : [];
-  const userGroups = session.groups || [];
-
-  const match = entries.find((entry) => {
-    const group = (entry.group || '').trim();
-    return userGroups.includes(group);
-  });
-
-  return redirect(request, match ? match.url : FALLBACK_PATH);
-}
-```
-
-The mapping spreadsheet looks like:
+The `/auth/portal` route provides a single entry point for all authenticated users. [`handlePortalRedirect`](https://github.com/aemsites/summit-portal/blob/main/workers/cloudflare/cug-adobe-oauth-worker/src/portal.js) fetches a `closed-user-groups-mapping.json` spreadsheet from the origin and redirects the user to the page mapped to their group. The mapping spreadsheet looks like:
 
 | group | url |
 |-------|-----|
@@ -555,52 +186,37 @@ This enables a single "Access Your Portal" link that routes each user to the rig
 
 Source: [`blocks/header/header.js`](https://github.com/aemsites/summit-portal/blob/main/blocks/header/header.js) — `decorateUserInfo()`
 
-The site header integrates authentication state into the UI:
+The site header integrates authentication state into the UI via [`decorateUserInfo`](https://github.com/aemsites/summit-portal/blob/main/blocks/header/header.js). On page load, the header calls `/auth/me`. If the response is a 401, the user sees a "Sign in" link pointing to `/auth/portal`. If authenticated, the user sees their email address as a button with a dropdown containing "Sign out" and "My Portal" links.
 
-```javascript
-async function decorateUserInfo(section) {
-  const container = section.querySelector('.default-content');
-  if (!container) return;
+---
 
-  const wrapper = document.createElement('div');
-  wrapper.className = 'user-info';
+## Step 6: Block-Level Personalization (User Group Teaser)
 
-  let user;
-  try {
-    const resp = await fetch('/auth/me');
-    user = resp.ok ? await resp.json() : null;
-  } catch { user = null; }
+The portal redirect (Step 5) routes each user to a dedicated member page, but what about shared pages like the home page? The `user-group-teaser` block solves this by loading a group-specific fragment inline — without duplicating the page for each group.
 
-  if (!user?.authenticated) {
-    const signIn = document.createElement('a');
-    signIn.href = '/auth/portal';
-    signIn.className = 'user-sign-in';
-    signIn.textContent = 'Sign in';
-    wrapper.append(signIn);
-  } else {
-    const btn = document.createElement('button');
-    btn.className = 'user-email';
-    btn.textContent = user.email;
+Source: [`blocks/user-group-teaser/user-group-teaser.js`](https://github.com/aemsites/summit-portal/blob/main/blocks/user-group-teaser/user-group-teaser.js)
 
-    const menu = document.createElement('div');
-    menu.className = 'user-menu';
-    const signOut = document.createElement('a');
-    signOut.href = '/auth/logout';
-    signOut.textContent = 'Sign out';
-    const myPortal = document.createElement('a');
-    myPortal.href = '/auth/portal';
-    myPortal.textContent = 'My Portal';
-    menu.append(signOut, myPortal);
+### How it works
 
-    btn.addEventListener('click', () => toggleMenu(wrapper));
-    wrapper.append(btn, menu);
-  }
+The full implementation is in [`blocks/user-group-teaser/user-group-teaser.js`](https://github.com/aemsites/summit-portal/blob/main/blocks/user-group-teaser/user-group-teaser.js). The block performs three sequential steps to resolve and render the correct teaser:
 
-  container.append(wrapper);
-}
-```
+1. **Get the user's groups** — calls `/auth/me` to retrieve the signed-in user's groups (derived from their email domain). If the user is not authenticated, the block removes itself from the page.
 
-On page load, the header calls `/auth/me`. If the response is a 401, the user sees a "Sign in" link pointing to `/auth/portal`. If authenticated, the user sees their email address as a button with a dropdown containing "Sign out" and "My Portal" links.
+2. **Resolve the group URL** — fetches `/closed-user-groups-mapping.json` (the same mapping used by the portal redirect) and finds the first entry matching the user's group. For an `adobe.com` user, this might return `/members/adobe`.
+
+3. **Load the teaser fragment** — appends `/teaser` to the group URL (e.g., `/members/adobe/teaser`) and loads it using the shared [`loadFragment`](https://github.com/aemsites/summit-portal/blob/main/blocks/fragment/fragment.js) utility, which fetches the HTML, parses it, fixes media URLs, and runs `loadArea` to decorate any nested blocks.
+
+### Security: two layers of defense
+
+The block resolves the fragment path client-side, which raises the question: could a user from group B see group A's teaser?
+
+**Layer 1 — Block logic (soft gate):** The block only requests the fragment matching the user's own group. A `partner.com` user will never have the block attempt to fetch `/members/adobe/teaser`.
+
+**Layer 2 — Worker CUG enforcement (hard gate):** Even if the client-side logic were bypassed, the `loadFragment` fetch goes through the Cloudflare Worker like any other request. The Worker proxies to the origin, reads the `x-aem-cug-required` and `x-aem-cug-groups` headers on the teaser page, and blocks access if the user's group doesn't match. The teaser fragment is protected by the same CUG rules as any other page under the customer portal path.
+
+### Graceful degradation
+
+The block is designed to fail silently. If the user is not signed in, the mapping fetch fails, no group matches, or the fragment can't be loaded, the block removes itself from the DOM — no error messages, no empty containers.
 
 ---
 
@@ -644,6 +260,22 @@ On page load, the header calls `/auth/me`. If the response is a 401, the user se
 5. User's group `adobe.com` matches the mapping entry for `/members/adobe`.
 6. Worker redirects to `/members/adobe`.
 7. Page loads normally (authenticated, same as steps 12–15 above).
+
+### Scenario 4: Block-level personalization on a shared page
+
+1. Authenticated `adobe.com` user visits the home page (`/`).
+2. Worker proxies to origin — no CUG headers on `/`, page is served publicly.
+3. Page loads and the `user-group-teaser` block initializes.
+4. Block calls `GET /auth/me` → Worker returns `{ groups: ["adobe.com"] }`.
+5. Block fetches `/closed-user-groups-mapping.json` → finds `{ group: "adobe.com", url: "/members/adobe" }`.
+6. Block computes fragment path: `/members/adobe/teaser`.
+7. `loadFragment` fetches `/members/adobe/teaser` — this request goes through the Worker.
+8. Worker proxies to origin, origin responds with `x-aem-cug-required: true` and `x-aem-cug-groups: adobe.com`.
+9. Worker verifies session, checks group — `adobe.com` matches — serves the fragment HTML.
+10. `loadFragment` parses the HTML, runs `loadArea` to decorate nested blocks, and returns the fragment.
+11. Block clears its placeholder content and appends the rendered teaser.
+
+If the user is not signed in, step 4 returns a 401 and the block removes itself — the rest of the page renders normally without the teaser.
 
 ---
 
