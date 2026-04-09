@@ -1,11 +1,6 @@
 /* Make header visible after block loads */
 header.header {
   display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
 }
 
 /* Header block styles */
