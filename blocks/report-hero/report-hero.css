@@ -559,7 +559,6 @@
 
 .section:has(.report-stats, .report-cards, .report-scores, .report-chart, .report-bar, .report-callout) {
   padding: 32px 0;
-  border-bottom: 1px solid var(--rpt-border-subtle);
 }
 
 .section:has(.report-carousel) {
