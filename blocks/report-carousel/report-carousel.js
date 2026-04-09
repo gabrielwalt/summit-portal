@@ -72,7 +72,6 @@ function renderColumnChart(chartData) {
   }).join('');
 
   const barsHtml = items.map((d, i) => {
-    const color = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
     const x = padX + i * (barW + gap);
     const barH = Math.max(2, (Math.abs(d.value) / maxVal) * chartH);
     const y = padTop + chartH - barH;
@@ -82,12 +81,10 @@ function renderColumnChart(chartData) {
       ? `<text x="${x + barW / 2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#888">${words.slice(0, 2).join(' ')}</text>
          <text x="${x + barW / 2}" y="${labelY + 13}" text-anchor="middle" font-size="10" fill="#888">${words.slice(2).join(' ')}</text>`
       : `<text x="${x + barW / 2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#888">${d.label}</text>`;
+    const r = Math.min(4, barW / 2);
+    const barPath = `M ${x} ${y + barH} L ${x} ${y + r} Q ${x} ${y} ${x + r} ${y} L ${x + barW - r} ${y} Q ${x + barW} ${y} ${x + barW} ${y + r} L ${x + barW} ${y + barH} Z`;
     return `
-      <rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="url(#colGrad${i})" rx="4">
-        <animate attributeName="height" from="0" to="${barH}" dur="0.5s" fill="freeze"/>
-        <animate attributeName="y" from="${padTop + chartH}" to="${y}" dur="0.5s" fill="freeze"/>
-      </rect>
-      <rect x="${x}" y="${y}" width="${barW}" height="2" fill="${color}" rx="1" opacity="0.9"/>
+      <path d="${barPath}" fill="url(#colGrad${i})"/>
       <text x="${x + barW / 2}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">${d.value}</text>
       ${labelHtml}`;
   }).join('');
