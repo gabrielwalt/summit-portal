@@ -29,11 +29,11 @@ function makeSpeedometer(ratio, label) {
 
   return `<svg width="72" height="44" viewBox="0 0 72 44" role="img" aria-label="${ariaLabel}" class="rs-speedometer">
     <title>${ariaLabel}</title>
-    <path d="M ${outerStart.x} ${outerStart.y} A ${outerR} ${outerR} 0 0 1 ${outerEnd.x} ${outerEnd.y}" fill="none" stroke="rgba(255, 255, 255, 0.22)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M ${outerStart.x} ${outerStart.y} A ${outerR} ${outerR} 0 0 1 ${outerEnd.x} ${outerEnd.y}" fill="none" class="rs-gauge-track" stroke-width="5" stroke-linecap="round"/>
     <path d="M ${outerStart.x} ${outerStart.y} A ${outerR} ${outerR} 0 ${outerLarge} 1 ${outerFill.x} ${outerFill.y}" fill="none" stroke="#ff5c5c" stroke-width="5" stroke-linecap="round"/>
-    <path d="M ${innerStart.x} ${innerStart.y} A ${innerR} ${innerR} 0 0 1 ${innerEnd.x} ${innerEnd.y}" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1"/>
-    <line x1="${cx}" y1="${cy}" x2="${needle.x}" y2="${needle.y}" stroke="rgba(255, 255, 255, 0.95)" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="${cx}" cy="${cy}" r="3.5" fill="rgba(255, 255, 255, 0.95)"/>
+    <path d="M ${innerStart.x} ${innerStart.y} A ${innerR} ${innerR} 0 0 1 ${innerEnd.x} ${innerEnd.y}" fill="none" class="rs-gauge-inner" stroke-width="1"/>
+    <line x1="${cx}" y1="${cy}" x2="${needle.x}" y2="${needle.y}" class="rs-gauge-needle" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="3.5" class="rs-gauge-pivot"/>
     <circle cx="${cx}" cy="${cy}" r="2" fill="#ff5c5c" opacity="0.45"/>
   </svg>`;
 }

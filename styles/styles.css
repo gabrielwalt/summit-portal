@@ -226,7 +226,7 @@ html {
 
 body {
   margin: 0;
-  background-color: light-dark(#f8f8f8, var(--color-dark));
+  background-color: light-dark(#f8f8f8, #1c1c1c);
   color: var(--color-text);
   font-family: var(--font-family);
   font-size: var(--body-font-size-m);

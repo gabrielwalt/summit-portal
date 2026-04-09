@@ -1,5 +1,28 @@
 const DEFAULT_COLORS = ['#818cf8', '#fb7185', '#fb923c', '#34d399', '#60a5fa', '#a78bfa'];
 
+function triggerCascade(container) {
+  const items = container.querySelectorAll('[data-anim]');
+  items.forEach((el) => {
+    el.classList.remove(el.dataset.anim);
+    el.style.opacity = '0';
+  });
+  items.forEach((el, i) => {
+    setTimeout(() => {
+      el.style.opacity = '';
+      el.classList.add(el.dataset.anim);
+    }, i * 200);
+  });
+  // Line chart special handling
+  const lp = container.querySelector('.rc-line-path');
+  if (lp) {
+    const len = lp.getTotalLength();
+    lp.style.strokeDasharray = len;
+    lp.style.strokeDashoffset = len;
+    lp.classList.remove('rc-anim-line');
+    requestAnimationFrame(() => { lp.classList.add('rc-anim-line'); });
+  }
+}
+
 function parsePair(line) {
   if (line.includes('|')) {
     const parts = line.split('|').map((s) => s.trim());
@@ -122,9 +145,12 @@ function renderColumnChart(chartData) {
       : `<text x="${x + barW / 2}" y="${labelY}" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">${d.label}</text>`;
     const r = Math.min(4, barW / 2);
     const barPath = `M ${x} ${padTop + chartH} L ${x} ${y + r} Q ${x} ${y} ${x + r} ${y} L ${x + barW - r} ${y} Q ${x + barW} ${y} ${x + barW} ${y + r} L ${x + barW} ${padTop + chartH} Z`;
+    const baseline = padTop + chartH;
     return `
-      <path class="rc-chart-hover" d="${barPath}" fill="url(#${uid}g${i})"><title>${d.label}: ${d.value}</title></path>
-      <text x="${x + barW / 2}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">${d.value}</text>
+      <g data-anim="rc-anim-bar" style="transform-origin:${x + barW / 2}px ${baseline}px;opacity:0">
+        <path class="rc-chart-hover" d="${barPath}" fill="url(#${uid}g${i})"><title>${d.label}: ${d.value}</title></path>
+        <text x="${x + barW / 2}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">${d.value}</text>
+      </g>
       ${labelHtml}`;
   }).join('');
 
@@ -246,14 +272,26 @@ function renderLineChart(chartData) {
       </linearGradient>
     </defs>
     ${hLines}${gridLines}
-    <path d="${areaD}" fill="url(#${uid}area)"/>
-    <path d="${curveD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="${areaD}" fill="url(#${uid}area)" class="rc-anim-area"/>
+    <path d="${curveD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" class="rc-line-path"/>
     ${dots}
     <line class="rc-line-hover-rule" x1="0" y1="${padTop}" x2="0" y2="${padTop + chartH}" stroke="${color}" stroke-width="1.5" opacity="0"/>
     <circle class="rc-line-hover-dot" cx="0" cy="0" r="5" fill="${color}" opacity="0"/>
     ${hitAreas}
     ${monthLabels}`;
   wrap.append(svg);
+
+  // Animate the line drawing
+  requestAnimationFrame(() => {
+    const linePath = svg.querySelector('.rc-line-path');
+    if (linePath) {
+      const len = linePath.getTotalLength();
+      linePath.style.setProperty('--path-length', len);
+      linePath.style.strokeDasharray = len;
+      linePath.style.strokeDashoffset = len;
+      linePath.classList.add('rc-anim-line');
+    }
+  });
 
   // Tooltip
   const tooltip = document.createElement('div');
@@ -303,6 +341,8 @@ function renderStackedBar(chartData) {
   items.forEach((d, i) => {
     const seg = document.createElement('div');
     seg.className = 'rc-stacked-seg rc-chart-hover';
+    seg.dataset.anim = 'rc-anim-stacked-seg';
+    seg.style.opacity = '0';
     const pct = (d.value / total) * 100;
     seg.style.width = `${pct}%`;
     const segColor = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
@@ -317,6 +357,8 @@ function renderStackedBar(chartData) {
   items.forEach((d, i) => {
     const item = document.createElement('div');
     item.className = 'rc-stacked-legend-item';
+    item.dataset.anim = 'rc-anim-fade-in';
+    item.style.opacity = '0';
     const dot = document.createElement('span');
     dot.className = 'rc-stacked-dot';
     dot.style.background = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
@@ -377,7 +419,7 @@ function renderDonutChart(chartData) {
     const glowId = `donutGlow${i}`;
     const arcPath = `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${innerR} ${innerR} 0 ${large} 0 ${xi1} ${yi1} Z`;
     return {
-      path: `<path class="rc-donut-seg" data-label="${d.label}" data-value="${d.value}%" d="${arcPath}" fill="url(#${gradId})" stroke="url(#${glowId})" stroke-width="1.5" stroke-linejoin="round"/>`,
+      path: `<path class="rc-donut-seg" data-anim="rc-anim-donut-seg" style="transform-origin:${cx}px ${cy}px;opacity:0" data-label="${d.label}" data-value="${d.value}%" d="${arcPath}" fill="url(#${gradId})" stroke="url(#${glowId})" stroke-width="1.5" stroke-linejoin="round"/>`,
       grad: `<radialGradient id="${gradId}" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="${fill}" stop-opacity="1"/><stop offset="100%" stop-color="${fill}" stop-opacity="0.82"/></radialGradient>
         <linearGradient id="${glowId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity="0.25"/><stop offset="100%" stop-color="#fff" stop-opacity="0.05"/></linearGradient>`,
     };
@@ -387,7 +429,7 @@ function renderDonutChart(chartData) {
   const gradsHtml = arcs.map((a) => a.grad).join('');
 
   const centerHtml = centerValue
-    ? `<text x="${cx}" y="${cy + 8}" text-anchor="middle" font-size="28" font-weight="800" fill="currentColor">${centerValue}</text>`
+    ? `<text x="${cx}" y="${cy + 8}" text-anchor="middle" font-size="28" font-weight="800" fill="currentColor" data-anim="rc-anim-fade-in" style="opacity:0">${centerValue}</text>`
     : '';
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -474,7 +516,7 @@ function renderHorizontalBars(chartData) {
     const r = Math.min(8, barH / 2);
     const barPath = `M ${chartL} ${y} L ${chartL + barW - r} ${y} Q ${chartL + barW} ${y} ${chartL + barW} ${y + r} L ${chartL + barW} ${y + barH - r} Q ${chartL + barW} ${y + barH} ${chartL + barW - r} ${y + barH} L ${chartL} ${y + barH} Z`;
     return `<text x="${labelW}" y="${y + barH / 2 + 4}" text-anchor="end" font-size="11" font-weight="700" fill="currentColor">${d.label}</text>
-      <path class="rc-hbar-path" d="${barPath}" fill="url(#${uid}g${i})" data-label="${d.label}" data-value="${d.value}${suffix}"><title>${d.label}: ${d.value}${suffix}</title></path>`;
+      <g data-anim="rc-anim-hbar" style="transform-origin:${chartL}px ${y + barH / 2}px;opacity:0"><path class="rc-hbar-path" d="${barPath}" fill="url(#${uid}g${i})" data-label="${d.label}" data-value="${d.value}${suffix}"><title>${d.label}: ${d.value}${suffix}</title></path></g>`;
   }).join('');
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -514,9 +556,9 @@ function renderBigFigure(chartData) {
   const wrap = document.createElement('div');
   wrap.className = 'rc-bigfigure';
   wrap.innerHTML = `
-    <div class="rc-bigfigure-value">${val}</div>
-    ${unit ? `<div class="rc-bigfigure-unit">${unit}</div>` : ''}
-    ${ctx ? `<div class="rc-bigfigure-ctx">${ctx}</div>` : ''}`;
+    <div class="rc-bigfigure-value" data-anim="rc-anim-bigfig" style="opacity:0">${val}</div>
+    ${unit ? `<div class="rc-bigfigure-unit" data-anim="rc-anim-fade-in" style="opacity:0">${unit}</div>` : ''}
+    ${ctx ? `<div class="rc-bigfigure-ctx" data-anim="rc-anim-fade-in" style="opacity:0">${ctx}</div>` : ''}`;
   return wrap;
 }
 
@@ -528,6 +570,8 @@ function renderMetricStrip(chartData) {
   items.forEach((d) => {
     const row = document.createElement('div');
     row.className = 'rc-metric-strip-row';
+    row.dataset.anim = 'rc-anim-rec';
+    row.style.opacity = '0';
     const note = d.raw?.[2] || '';
     row.innerHTML = `
       <div class="rc-ms-label">${d.label}</div>
@@ -542,7 +586,7 @@ function renderRecommendationList(chartData) {
   const { items } = chartData;
   if (!items.length) return null;
   const TONE_ICONS = {
-    growth: '📈',
+    growth: '↗',
     risk: '⏱',
     action: '✓',
     priority: '⚠',
@@ -556,6 +600,8 @@ function renderRecommendationList(chartData) {
     const detail = d.raw?.[1] || '';
     const card = document.createElement('div');
     card.className = `rc-rec-card rc-rec-${tone}`;
+    card.dataset.anim = 'rc-anim-rec';
+    card.style.opacity = '0';
     card.innerHTML = `
       <div class="rc-rec-icon">${icon}</div>
       <div class="rc-rec-body">
@@ -840,42 +886,38 @@ export default function init(el) {
   function goToSlide(localIdx, direction) {
     const outDir = direction === 'prev' ? 80 : -80;
     const inDir = direction === 'prev' ? -80 : 80;
-
-    // Animate out the current slide
     const currIdx = currentIdxByTab[currentTab];
+
     slideEls.forEach((slideEl) => {
       const inTab = parseInt(slideEl.dataset.tab, 10) === currentTab;
       const isCurrent = parseInt(slideEl.dataset.localIdx, 10) === currIdx;
+      const isTarget = parseInt(slideEl.dataset.localIdx, 10) === localIdx;
+
       if (inTab && isCurrent) {
-        slideEl.style.transition = 'opacity 0.25s ease, transform 0.3s cubic-bezier(0.4, 0, 1, 1)';
+        // Animate out
+        slideEl.style.transition = 'opacity 0.3s ease, transform 0.35s cubic-bezier(0.4, 0, 1, 1)';
         slideEl.style.opacity = '0';
         slideEl.style.transform = `translateX(${outDir}px)`;
-        setTimeout(() => { slideEl.hidden = true; }, 250);
+        setTimeout(() => { slideEl.hidden = true; }, 350);
+      } else if (inTab && isTarget) {
+        // Animate in immediately (overlaps outgoing briefly)
+        slideEl.hidden = false;
+        slideEl.style.transition = 'none';
+        slideEl.style.opacity = '0';
+        slideEl.style.transform = `translateX(${inDir}px)`;
+        // Trigger cascading chart animations
+        triggerCascade(slideEl);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            slideEl.style.transition = 'opacity 0.35s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
+            slideEl.style.opacity = '1';
+            slideEl.style.transform = 'translateX(0)';
+          });
+        });
+      } else {
+        slideEl.hidden = true;
       }
     });
-
-    // Animate in the target slide after a short delay
-    setTimeout(() => {
-      slideEls.forEach((slideEl) => {
-        const inTab = parseInt(slideEl.dataset.tab, 10) === currentTab;
-        const isTarget = parseInt(slideEl.dataset.localIdx, 10) === localIdx;
-        if (inTab && isTarget) {
-          slideEl.hidden = false;
-          slideEl.style.transition = 'none';
-          slideEl.style.opacity = '0';
-          slideEl.style.transform = `translateX(${inDir}px)`;
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              slideEl.style.transition = 'opacity 0.35s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
-              slideEl.style.opacity = '1';
-              slideEl.style.transform = 'translateX(0)';
-            });
-          });
-        } else if (!inTab || parseInt(slideEl.dataset.localIdx, 10) !== currIdx) {
-          slideEl.hidden = true;
-        }
-      });
-    }, 150);
 
     currentIdxByTab[currentTab] = localIdx;
     updateNav();
@@ -889,6 +931,7 @@ export default function init(el) {
       const inTab = parseInt(slideEl.dataset.tab, 10) === tabIdx;
       const isActive = parseInt(slideEl.dataset.localIdx, 10) === curr;
       slideEl.hidden = !(inTab && isActive);
+      if (inTab && isActive) triggerCascade(slideEl);
     });
     updateNav();
   }
@@ -908,4 +951,8 @@ export default function init(el) {
   });
 
   updateNav();
+
+  // Trigger cascade on the initial visible slide
+  const initialSlide = slideEls.find((s) => !s.hidden);
+  if (initialSlide) triggerCascade(initialSlide);
 }

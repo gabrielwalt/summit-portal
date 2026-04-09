@@ -5,12 +5,12 @@ header.header {
 
 /* Header block styles */
 .header {
-  --header-background: #f8f8f8;
+  --header-background: light-dark(#f8f8f8, #1c1c1c);
   --header-height: 64px;
   --header-logo-height: 32px;
   --header-nav-font-size: 16px;
   --header-nav-font-weight: 700;
-  --header-text-color: #131313;
+  --header-text-color: light-dark(#131313, #e5e5e5);
   --header-max-width: 1200px;
   --header-padding: 0 24px;
   --header-inner-gap: 16px;
@@ -35,7 +35,7 @@ header.header {
 }
 
 header.header-wrapper {
-  background: #f8f8f8;
+  background: light-dark(#f8f8f8, #1c1c1c);
   padding: 0 24px;
 }
 
