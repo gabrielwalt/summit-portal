@@ -63,6 +63,14 @@ function renderColumnChart(chartData) {
   const totalW = padX * 2 + items.length * barW + (items.length - 1) * gap;
   const totalH = padTop + chartH + labelH;
 
+  const gradients = items.map((d, i) => {
+    const color = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+    return `<linearGradient id="colGrad${i}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="1"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0.6"/>
+    </linearGradient>`;
+  }).join('');
+
   const barsHtml = items.map((d, i) => {
     const color = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
     const x = padX + i * (barW + gap);
@@ -75,7 +83,11 @@ function renderColumnChart(chartData) {
          <text x="${x + barW / 2}" y="${labelY + 13}" text-anchor="middle" font-size="10" fill="#888">${words.slice(2).join(' ')}</text>`
       : `<text x="${x + barW / 2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#888">${d.label}</text>`;
     return `
-      <rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${color}" rx="4"/>
+      <rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="url(#colGrad${i})" rx="4">
+        <animate attributeName="height" from="0" to="${barH}" dur="0.5s" fill="freeze"/>
+        <animate attributeName="y" from="${padTop + chartH}" to="${y}" dur="0.5s" fill="freeze"/>
+      </rect>
+      <rect x="${x}" y="${y}" width="${barW}" height="2" fill="${color}" rx="1" opacity="0.9"/>
       <text x="${x + barW / 2}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">${d.value}</text>
       ${labelHtml}`;
   }).join('');
@@ -84,7 +96,7 @@ function renderColumnChart(chartData) {
   svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
   svg.setAttribute('class', 'rc-chart-svg');
   svg.setAttribute('role', 'img');
-  svg.innerHTML = barsHtml;
+  svg.innerHTML = `<defs>${gradients}</defs>${barsHtml}`;
   return svg;
 }
 
@@ -110,7 +122,7 @@ function renderLineChart(chartData) {
   const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   const areaD = `${pathD} L ${pts[pts.length - 1].x} ${H - padBot} L ${pts[0].x} ${H - padBot} Z`;
 
-  const dots = pts.map((p) => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}"/>`).join('');
+  const dots = pts.map((p) => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${color}" opacity="0.25"/><circle cx="${p.x}" cy="${p.y}" r="2.5" fill="${color}"/>`).join('');
   const labels = [0, pts.length - 1].map((i) => {
     const p = pts[i];
     const anchor = i === 0 ? 'start' : 'end';
@@ -129,7 +141,7 @@ function renderLineChart(chartData) {
       </linearGradient>
     </defs>
     <path d="${areaD}" fill="url(#rcArea)"/>
-    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
     ${dots}
     ${labels}`;
   return svg;
@@ -150,7 +162,8 @@ function renderStackedBar(chartData) {
     seg.className = 'rc-stacked-seg';
     const pct = (d.value / total) * 100;
     seg.style.width = `${pct}%`;
-    seg.style.background = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+    const segColor = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+    seg.style.background = `linear-gradient(180deg, ${segColor}, ${segColor}bb)`;
     seg.title = `${d.label}: ${d.value}%`;
     bar.append(seg);
   });
@@ -207,8 +220,12 @@ function renderDonutChart(chartData) {
     const yi2 = cy + innerR * Math.sin(angle);
     const large = slice > Math.PI ? 1 : 0;
     const fill = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
-    return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${innerR} ${innerR} 0 ${large} 0 ${xi1} ${yi1} Z" fill="${fill}" opacity="0.9"/>`;
-  }).join('');
+    const gradId = `donutGrad${i}`;
+    return { path: `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${innerR} ${innerR} 0 ${large} 0 ${xi1} ${yi1} Z" fill="url(#${gradId})"/>`, grad: `<linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${fill}" stop-opacity="1"/><stop offset="100%" stop-color="${fill}" stop-opacity="0.7"/></linearGradient>`, fill };
+  });
+
+  const arcsHtml = arcs.map((a) => a.path).join('');
+  const gradsHtml = arcs.map((a) => a.grad).join('');
 
   const centerHtml = centerValue
     ? `<text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="20" font-weight="800" fill="currentColor">${centerValue}</text>
@@ -216,7 +233,7 @@ function renderDonutChart(chartData) {
     : '';
 
   const legend = segments.map((d, i) => {
-    const fill = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+    const { fill } = arcs[i];
     return `<text x="170" y="${20 + i * 18}" font-size="11" fill="currentColor">
       <tspan style="fill:${fill}">■</tspan> ${d.label} ${d.value}%
     </text>`;
@@ -226,7 +243,7 @@ function renderDonutChart(chartData) {
   svg.setAttribute('viewBox', '0 0 280 160');
   svg.setAttribute('class', 'rc-chart-svg');
   svg.setAttribute('role', 'img');
-  svg.innerHTML = `${arcs}${centerHtml}${legend}`;
+  svg.innerHTML = `<defs>${gradsHtml}</defs>${arcsHtml}${centerHtml}${legend}`;
   return svg;
 }
 
@@ -244,7 +261,7 @@ function renderHorizontalBars(chartData) {
     const suffix = d.suffix || '';
     row.innerHTML = `
       <div class="rc-hbar-label">${d.label}</div>
-      <div class="rc-hbar-track"><div class="rc-hbar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="rc-hbar-track"><div class="rc-hbar-fill" style="width:${pct}%;background:linear-gradient(90deg, ${color}, ${color}cc)"></div></div>
       <div class="rc-hbar-value">${d.value}${suffix}</div>`;
     wrap.append(row);
   });

@@ -90,6 +90,23 @@
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
+  position: relative;
+}
+
+/* White backing card revealed on hover */
+.report-download .rd-right::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  border-radius: 8px;
+  z-index: 0;
+  transform: none;
+  transition: transform 220ms cubic-bezier(0, 0, 0.4, 1);
+}
+
+.report-download .rd-right:hover::before {
+  transform: translateX(32px);
 }
 
 .report-download .rd-pdf-card {
@@ -111,11 +128,13 @@
   grid-template-columns: 1fr auto;
   box-shadow: rgb(0 0 0 / 8%) 0 1px 2px, rgb(0 0 0 / 12%) 0 4px 12px;
   transform-origin: left center;
+  position: relative;
+  z-index: 1;
   transition: transform 220ms cubic-bezier(0, 0, 0.4, 1), box-shadow 220ms cubic-bezier(0, 0, 0.4, 1);
   cursor: pointer;
 }
 
-.report-download .rd-pdf-card:hover {
+.report-download .rd-right:hover .rd-pdf-card {
   transform: perspective(1500px) rotateY(15deg);
   box-shadow:
     rgb(0 0 0 / 14%) 0 4px 10px,
