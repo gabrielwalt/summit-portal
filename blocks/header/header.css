@@ -1,21 +1,16 @@
 /* Make header visible after block loads */
 header.header {
   display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
 }
 
 /* Header block styles */
 .header {
-  --header-background: #f8f8f8;
+  --header-background: light-dark(#f8f8f8, #1c1c1c);
   --header-height: 64px;
   --header-logo-height: 32px;
   --header-nav-font-size: 16px;
   --header-nav-font-weight: 700;
-  --header-text-color: #131313;
+  --header-text-color: light-dark(#131313, #e5e5e5);
   --header-max-width: 1200px;
   --header-padding: 0 24px;
   --header-inner-gap: 16px;
@@ -26,9 +21,9 @@ header.header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: var(--header-max-width);
+  max-width: calc(var(--header-max-width) + 48px);
   margin: 0 auto;
-  padding: 16px 0;
+  padding: 16px 24px;
   height: var(--header-height);
   gap: var(--header-inner-gap);
   width: 100%;
@@ -37,11 +32,6 @@ header.header {
 .header .header-wrapper,
 .header {
   background: var(--header-background);
-}
-
-header.header-wrapper {
-  background: #f8f8f8;
-  padding: 0 24px;
 }
 
 .header .nav-brand {
@@ -109,7 +99,7 @@ header.header-wrapper {
 /* Mobile */
 @media (width < 900px) {
   .header nav {
-    padding: 12px 0;
+    padding: 12px 24px;
   }
 
   .header .nav-brand a {

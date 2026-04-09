@@ -1,3 +1,99 @@
+function parseValue(text) {
+  const t = text.trim();
+  const m = t.match(/^([\d.]+)(M|K|%)?$/);
+  if (!m) return null;
+  return { num: parseFloat(m[1]), suffix: m[2] || '' };
+}
+
+function formatValue(num, suffix, decimals) {
+  const s = decimals > 0 ? num.toFixed(decimals) : Math.round(num).toString();
+  return `${s}${suffix}`;
+}
+
+function easeOutExpo(t) {
+  return t >= 1 ? 1 : 1 - 2 ** (-10 * t);
+}
+
+function animateValue(el, targetText, duration) {
+  const parsed = parseValue(targetText);
+  if (!parsed) return;
+  const { num: target, suffix } = parsed;
+  const decimals = targetText.includes('.') ? (targetText.match(/\.(\d+)/)?.[1].length || 0) : 0;
+  const start = performance.now();
+
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const val = easeOutExpo(t) * target;
+    el.textContent = formatValue(val, suffix, decimals);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function animateSpeedometer(svg, targetRatio, duration) {
+  if (!svg) return;
+  const fillPath = svg.querySelectorAll('path')[1];
+  const needle = svg.querySelector('line');
+  if (!fillPath || !needle) return;
+
+  const cx = 34;
+  const cy = 36;
+  const outerR = 26;
+  const needleR = outerR - 10;
+  const start = performance.now();
+
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const pct = easeOutExpo(t) * targetRatio;
+    const angle = Math.PI - pct * Math.PI;
+    const large = pct > 0.5 ? 1 : 0;
+
+    const sx = cx + outerR * Math.cos(Math.PI);
+    const sy = cy - outerR * Math.sin(Math.PI);
+    const ex = cx + outerR * Math.cos(angle);
+    const ey = cy - outerR * Math.sin(angle);
+    fillPath.setAttribute('d', `M ${sx} ${sy} A ${outerR} ${outerR} 0 ${large} 1 ${ex} ${ey}`);
+
+    const nx = cx + needleR * Math.cos(angle);
+    const ny = cy - needleR * Math.sin(angle);
+    needle.setAttribute('x2', nx);
+    needle.setAttribute('y2', ny);
+
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function animateDarkStats(strip) {
+  const cards = strip.querySelectorAll('.rs-dark-card');
+  cards.forEach((card, i) => {
+    const valueEl = card.querySelector('.rs-dark-value');
+    const mainSpan = valueEl.querySelector('.rs-dark-value-main');
+    const meter = card.querySelector('.rs-speedometer');
+    const duration = 3000 + Math.random() * 2000;
+    const delay = 1000 + i * 120;
+
+    if (mainSpan) {
+      const target = mainSpan.textContent;
+      mainSpan.textContent = '0';
+      const parsed = parseValue(target);
+      const targetRatio = parsed ? parsed.num / 100 : 0;
+
+      // Zero the speedometer initially
+      if (meter) animateSpeedometer(meter, 0, 0.001);
+
+      setTimeout(() => {
+        animateValue(mainSpan, target, duration);
+        if (meter) animateSpeedometer(meter, targetRatio, duration);
+      }, delay);
+    } else {
+      const target = valueEl.textContent;
+      valueEl.textContent = '0';
+      setTimeout(() => animateValue(valueEl, target, duration), delay);
+    }
+  });
+}
+
 function makeSpeedometer(ratio, label) {
   const pct = Math.max(0, Math.min(1, ratio));
   const angle = Math.PI - pct * Math.PI;
@@ -29,11 +125,11 @@ function makeSpeedometer(ratio, label) {
 
   return `<svg width="72" height="44" viewBox="0 0 72 44" role="img" aria-label="${ariaLabel}" class="rs-speedometer">
     <title>${ariaLabel}</title>
-    <path d="M ${outerStart.x} ${outerStart.y} A ${outerR} ${outerR} 0 0 1 ${outerEnd.x} ${outerEnd.y}" fill="none" stroke="rgba(255, 255, 255, 0.22)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M ${outerStart.x} ${outerStart.y} A ${outerR} ${outerR} 0 0 1 ${outerEnd.x} ${outerEnd.y}" fill="none" class="rs-gauge-track" stroke-width="5" stroke-linecap="round"/>
     <path d="M ${outerStart.x} ${outerStart.y} A ${outerR} ${outerR} 0 ${outerLarge} 1 ${outerFill.x} ${outerFill.y}" fill="none" stroke="#ff5c5c" stroke-width="5" stroke-linecap="round"/>
-    <path d="M ${innerStart.x} ${innerStart.y} A ${innerR} ${innerR} 0 0 1 ${innerEnd.x} ${innerEnd.y}" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1"/>
-    <line x1="${cx}" y1="${cy}" x2="${needle.x}" y2="${needle.y}" stroke="rgba(255, 255, 255, 0.95)" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="${cx}" cy="${cy}" r="3.5" fill="rgba(255, 255, 255, 0.95)"/>
+    <path d="M ${innerStart.x} ${innerStart.y} A ${innerR} ${innerR} 0 0 1 ${innerEnd.x} ${innerEnd.y}" fill="none" class="rs-gauge-inner" stroke-width="1"/>
+    <line x1="${cx}" y1="${cy}" x2="${needle.x}" y2="${needle.y}" class="rs-gauge-needle" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="3.5" class="rs-gauge-pivot"/>
     <circle cx="${cx}" cy="${cy}" r="2" fill="#ff5c5c" opacity="0.45"/>
   </svg>`;
 }
@@ -108,16 +204,8 @@ function buildDarkStats(el, rows) {
     const badgeEl = document.createElement('div');
     badgeEl.className = 'rs-dark-badge';
     badgeEl.textContent = badgeText;
-    // Derive badge color
-    const bl = (badgeText + badgeStatus).toLowerCase();
-    let status = 'neutral';
-    if (bl.includes('critical')) {
-      status = 'critical';
-    } else if (bl.includes('negative') || bl.includes('down') || bl.includes('poor')) {
-      status = 'negative';
-    } else if (bl.includes('positive') || bl.includes('optimal') || bl.includes('good')) {
-      status = 'positive';
-    }
+    // Use 4th column directly for status: negative, critical, positive, neutral
+    const status = badgeStatus || 'neutral';
     badgeEl.dataset.status = status;
     badgeEl.innerHTML = (BADGE_ICONS[status] || '') + badgeEl.textContent;
 
@@ -132,6 +220,7 @@ function buildDarkStats(el, rows) {
 
   el.textContent = '';
   el.append(strip);
+  animateDarkStats(strip);
 }
 
 export default function init(el) {

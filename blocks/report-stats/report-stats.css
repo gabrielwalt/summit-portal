@@ -112,7 +112,7 @@
 }
 
 .report-stats.dark .rs-dark-strip {
-  background: #000;
+  background: light-dark(#000, #f5f5f5);
   display: flex;
   padding: 0 64px;
   gap: 40px;
@@ -122,7 +122,7 @@
   padding: 48px 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   flex: 1;
 }
 
@@ -133,7 +133,7 @@
 .report-stats.dark .rs-dark-label {
   font-size: 14px;
   font-weight: 500;
-  color: rgb(255 255 255 / 70%);
+  color: light-dark(#fff, #111);
 }
 
 .report-stats.dark .rs-dark-value-row {
@@ -145,7 +145,7 @@
 .report-stats.dark .rs-dark-value {
   font-size: 36px;
   font-weight: 800;
-  color: #fff;
+  color: light-dark(#fff, #111);
   line-height: 1.2;
   letter-spacing: -0.5px;
 }
@@ -160,6 +160,22 @@
   width: 72px;
   height: 44px;
   flex-shrink: 0;
+}
+
+.report-stats.dark .rs-gauge-track {
+  stroke: light-dark(rgb(255 255 255 / 22%), rgb(0 0 0 / 15%));
+}
+
+.report-stats.dark .rs-gauge-inner {
+  stroke: light-dark(rgb(255 255 255 / 12%), rgb(0 0 0 / 10%));
+}
+
+.report-stats.dark .rs-gauge-needle {
+  stroke: light-dark(rgb(255 255 255 / 95%), rgb(0 0 0 / 80%));
+}
+
+.report-stats.dark .rs-gauge-pivot {
+  fill: light-dark(rgb(255 255 255 / 95%), rgb(0 0 0 / 80%));
 }
 
 .report-stats.dark .rs-dark-badge {
@@ -194,11 +210,10 @@
 /* Speedometer card: color the leading number by badge status */
 .report-stats.dark .rs-dark-card:has([data-status='negative']) .rs-dark-value-main,
 .report-stats.dark .rs-dark-card:has([data-status='critical']) .rs-dark-value-main { color: #d73220; }
-.report-stats.dark .rs-dark-card:has([data-status='positive']) .rs-dark-value-main { color: #058e4e; }
 
 .report-stats.dark .rs-dark-desc {
   font-size: 14px;
-  color: rgb(255 255 255 / 60%);
+  color: light-dark(#fff, #333);
   line-height: 1.4;
   margin-top: 2px;
 }
@@ -230,17 +245,21 @@
 }
 
 @media (width < 600px) {
-  .report-stats.dark .rs-dark-value {
-    font-size: 24px;
+  .report-stats.dark .rs-dark-strip {
+    grid-template-columns: minmax(0, 400px);
+    justify-content: center;
+    padding: 0;
   }
 
-  .report-stats.dark .rs-dark-label {
-    font-size: 12px;
+  .report-stats.dark .rs-dark-card {
+    padding: 20px;
+    border-right: none;
   }
 
-  .report-stats.dark .rs-dark-desc {
-    font-size: 12px;
+  .report-stats.dark .rs-dark-card:nth-child(odd) {
+    border-right: none;
   }
+
 }
 
 /* Compact variant */

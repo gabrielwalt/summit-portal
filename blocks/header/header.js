@@ -38,8 +38,9 @@ function toggleMenu(nav, desktop, forceExpanded = null) {
 export default async function decorate(block) {
   // load nav as fragment
   const navMeta = getMetadata('nav');
-  const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/content/nav';
-  const resp = await fetch(`${navPath}.html`);
+  const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav';
+  let resp = await fetch(`/content${navPath}.html`);
+  if (!resp.ok) resp = await fetch(`${navPath}.plain.html`);
 
   if (resp.ok) {
     const html = await resp.text();
@@ -54,6 +55,17 @@ export default async function decorate(block) {
       const section = nav.children[i];
       if (section) section.classList.add(`nav-${c}`);
     });
+
+    // Insert Adobe logo into brand link
+    const brandLink = nav.querySelector('.nav-brand a');
+    if (brandLink) {
+      const logo = document.createElement('img');
+      logo.src = '/blocks/header/adobe-logo.svg';
+      logo.alt = 'Adobe';
+      logo.width = 32;
+      logo.height = 32;
+      brandLink.prepend(logo);
+    }
 
     // hamburger for mobile
     const hamburger = document.createElement('div');

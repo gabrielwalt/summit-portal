@@ -1,3 +1,15 @@
+/* Typing cursor animation */
+.rh-typing::after {
+  content: '|';
+  animation: rh-blink 0.6s step-end infinite;
+  font-weight: 400;
+  margin-left: 1px;
+}
+
+@keyframes rh-blink {
+  50% { opacity: 0; }
+}
+
 /* Report Hero — Cover, Transition, Dashboard & Insight Slides */
 .report-hero {
   display: flex;
@@ -225,9 +237,9 @@
 }
 
 .report-hero.insight .rh-insight-text p {
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1.65;
-  color: rgb(255 255 255 / 85%);
+  color: #fff;
   margin: 0;
   max-width: 520px;
 }
@@ -236,7 +248,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  min-height: 20px;
+  padding: 8px 12px;
   background: #fff;
   border-radius: 9px;
   font-size: 14px;
@@ -262,8 +275,7 @@
 @media (width >= 1000px) {
   .report-hero.insight {
     grid-template-columns: 1fr 1fr;
-    min-height: 340px;
-    max-height: 380px;
+    height: 340px;
     overflow: hidden;
     border-radius: 16px 16px 0 0;
   }
@@ -282,8 +294,8 @@
   .report-hero.insight .rh-insight-image {
     display: flex;
     align-items: flex-start;
-    justify-content: center;
-    padding: 32px 24px 0 0;
+    justify-content: flex-end;
+    padding: 32px 64px 0 0;
     overflow: hidden;
   }
 
@@ -292,14 +304,13 @@
     border-radius: 8px 8px 0 0;
     overflow: hidden;
     box-shadow: 0 4px 16px rgb(0 0 0 / 20%);
-    max-width: 90%;
+    width: 400px;
+    flex-shrink: 0;
   }
 
   .report-hero.insight .rh-insight-image img {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top left;
+    height: auto;
     display: block;
   }
 }
@@ -560,7 +571,6 @@
 
 .section:has(.report-stats, .report-cards, .report-scores, .report-chart, .report-bar, .report-callout) {
   padding: 32px 0;
-  border-bottom: 1px solid var(--rpt-border-subtle);
 }
 
 .section:has(.report-carousel) {
@@ -637,6 +647,8 @@
 @media (width < 1000px) {
   .report-hero.insight .rh-insight-text {
     padding: 32px 24px;
+    max-width: 400px;
+    margin: 0 auto;
   }
 
   .report-hero.insight .rh-insight-text h1,
@@ -645,8 +657,29 @@
   }
 
   .report-hero.insight > .rh-insight-bg-svg {
-    width: 300px;
-    height: 300px;
+    display: none;
+  }
+
+  .report-hero.insight .rh-insight-image {
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0 24px;
+  }
+
+  .report-hero.insight .rh-insight-image picture {
+    display: block;
+    max-width: 400px;
+    width: 400px;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 20%);
+  }
+
+  .report-hero.insight .rh-insight-image img {
+    width: 100%;
+    height: auto;
+    display: block;
   }
 
   .report-hero.insight {

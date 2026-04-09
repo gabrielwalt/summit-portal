@@ -13,7 +13,7 @@ footer.footer > div {
 
 footer.footer p {
   margin: 0;
-  color: rgb(80 80 80);
+  color: light-dark(rgb(80 80 80), rgb(180 180 180));
   font-size: 14px;
   font-weight: 500;
   line-height: 18px;
@@ -35,13 +35,13 @@ footer.footer ul li {
 }
 
 footer.footer ul a:any-link {
-  color: rgb(41 41 41);
+  color: light-dark(rgb(41 41 41), rgb(180 180 180));
   font-size: 14px;
   text-decoration: underline;
 }
 
 footer.footer ul a:hover {
-  color: rgb(0 0 0);
+  color: light-dark(rgb(0 0 0), rgb(220 220 220));
 }
 
 @media (width >= 1000px) {
