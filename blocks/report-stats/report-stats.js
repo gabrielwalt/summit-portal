@@ -108,16 +108,8 @@ function buildDarkStats(el, rows) {
     const badgeEl = document.createElement('div');
     badgeEl.className = 'rs-dark-badge';
     badgeEl.textContent = badgeText;
-    // Derive badge color
-    const bl = (badgeText + badgeStatus).toLowerCase();
-    let status = 'neutral';
-    if (bl.includes('critical')) {
-      status = 'critical';
-    } else if (bl.includes('negative') || bl.includes('down') || bl.includes('poor')) {
-      status = 'negative';
-    } else if (bl.includes('positive') || bl.includes('optimal') || bl.includes('good')) {
-      status = 'positive';
-    }
+    // Use 4th column directly for status: negative, critical, positive, neutral
+    const status = badgeStatus || 'neutral';
     badgeEl.dataset.status = status;
     badgeEl.innerHTML = (BADGE_ICONS[status] || '') + badgeEl.textContent;
 

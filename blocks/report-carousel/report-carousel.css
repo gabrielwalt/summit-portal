@@ -127,53 +127,11 @@
 
 /* Badge */
 .report-carousel .rc-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 11px;
+  display: inline;
+  color: var(--rpt-red, #eb1000);
+  font-size: 14px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  margin-bottom: 12px;
-
-  &::before {
-    content: '';
-    display: block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  &[data-type='no'] {
-    background: rgb(230 0 0 / 10%);
-    color: #e60000;
-
-    &::before { background: #e60000; }
-  }
-
-  &[data-type='key'] {
-    background: rgb(37 99 235 / 10%);
-    color: #2563eb;
-
-    &::before { background: #2563eb; }
-  }
-
-  &[data-type='critical'] {
-    background: rgb(234 88 12 / 10%);
-    color: #ea580c;
-
-    &::before { background: #ea580c; }
-  }
-
-  &[data-type='insight'] {
-    background: rgb(16 185 129 / 10%);
-    color: #10b981;
-
-    &::before { background: #10b981; }
-  }
+  margin-bottom: 8px;
 }
 
 /* Slide content */
