@@ -60,7 +60,7 @@ export default async function decorate(block) {
     const brandLink = nav.querySelector('.nav-brand a');
     if (brandLink) {
       const logo = document.createElement('img');
-      logo.src = '/blocks/header/adobe-logo.svg';
+      logo.src = '/img/icons/adobe-logo.svg';
       logo.alt = 'Adobe';
       logo.width = 32;
       logo.height = 32;
