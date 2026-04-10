@@ -88,8 +88,34 @@ header.header {
   transition: background 0.15s;
 }
 
-.header .nav-tools a:hover {
+.header .nav-tools a:hover,
+.header .nav-night-toggle:hover {
   background: rgb(0 0 0 / 7%);
+}
+
+.header .nav-night-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--header-text-color);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.header .nav-night-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.header .nav-tools a svg {
+  width: 20px;
+  height: 20px;
 }
 
 .header .nav-hamburger {
